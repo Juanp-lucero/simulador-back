@@ -4,6 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.simulation.engine import Waypoint, validate_path
+
 
 class AircraftWrite(BaseModel):
     registration: str = Field(min_length=3, max_length=15, pattern=r"^[A-Z0-9][A-Z0-9-]+$")
@@ -57,6 +59,15 @@ class RouteWrite(BaseModel):
     @classmethod
     def normalize_name(cls, value: object) -> object:
         return value.strip() if isinstance(value, str) else value
+
+    @field_validator("waypoints")
+    @classmethod
+    def validate_geometry(cls, value: list[WaypointWrite]) -> list[WaypointWrite]:
+        validate_path([
+            Waypoint(point.latitude_deg, point.longitude_deg, point.altitude_m, point.speed_mps)
+            for point in value
+        ])
+        return value
 
 
 class RouteResponse(BaseModel):

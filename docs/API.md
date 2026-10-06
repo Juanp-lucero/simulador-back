@@ -30,3 +30,7 @@ Todos estos endpoints requieren Bearer JWT. Cada usuario solo puede leer y modif
 Una aeronave contiene `registration`, `model_name`, `cruise_speed_mps` y `max_altitude_m`. La matrícula se normaliza a mayúsculas y es única. Una ruta contiene `name`, `aircraft_id` opcional y `waypoints`; el nombre es único por usuario. Solo se puede asignar una aeronave propia. Eliminar una aeronave deja sus rutas sin asignación, no elimina los planes.
 
 Cada waypoint contiene `latitude_deg`, `longitude_deg`, `altitude_m` y `speed_mps`. La posición se expresa en grados geográficos; la altitud en metros y la velocidad en metros por segundo. El orden del array define la secuencia. `PUT` reemplaza el recurso completo. Las colisiones de matrícula/nombre devuelven `409`; los valores fuera de rango devuelven `422`.
+
+## Simulación
+
+`POST /simulation/preview` evalúa rutas propias en un tiempo simulado. Recibe `route_ids` y `elapsed_s`; devuelve posiciones, rumbo, velocidad, progreso y duración. Requiere aeronaves asignadas y no permite la misma aeronave en dos rutas del escenario. Los supuestos y límites están en [SIMULATION.md](SIMULATION.md).

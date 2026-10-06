@@ -253,3 +253,48 @@ def test_route_name_is_unique_per_owner_and_aircraft_delete_unassigns(operations
     )
     assert remaining_route.status_code == 200
     assert remaining_route.json()["aircraft_id"] is None
+
+
+def test_preview_uses_owned_assigned_routes_and_rejects_invalid_scenarios(operations_context) -> None:
+    client, session_factory = operations_context
+    _, headers = create_actor(session_factory, "sim-pilot@example.com")
+    _, other_headers = create_actor(session_factory, "sim-other@example.com")
+    aircraft = client.post("/aircraft", headers=headers, json=aircraft_payload()).json()
+    route = client.post(
+        "/routes", headers=headers, json=route_payload(aircraft_id=aircraft["id"])
+    ).json()
+    payload = {"route_ids": [route["id"]], "elapsed_s": 30}
+    preview = client.post("/simulation/preview", headers=headers, json=payload)
+    assert preview.status_code == 200
+    snapshot = preview.json()
+    assert snapshot["elapsed_s"] == 30
+    state = snapshot["states"][0]
+    assert state["registration"] == "HK-1234"
+    assert state["speed_mps"] == 60
+    assert 0 < state["progress"] < 1
+    assert state["latitude_deg"] != pytest.approx(4.7016)
+    assert client.post(
+        "/simulation/preview", headers=other_headers, json=payload
+    ).status_code == 404
+    assert client.post("/simulation/preview", json=payload).status_code == 401
+    assert client.post(
+        "/simulation/preview", headers=headers,
+        json={"route_ids": [route["id"], route["id"]]},
+    ).status_code == 422
+
+    second = client.post(
+        "/routes", headers=headers,
+        json=route_payload(name="Second plan", aircraft_id=aircraft["id"]),
+    ).json()
+    assert client.post(
+        "/simulation/preview", headers=headers,
+        json={"route_ids": [route["id"], second["id"]]},
+    ).status_code == 422
+
+    unassigned = client.post(
+        "/routes", headers=headers, json=route_payload(name="Unassigned")
+    ).json()
+    assert client.post(
+        "/simulation/preview", headers=headers,
+        json={"route_ids": [unassigned["id"]]},
+    ).status_code == 422
