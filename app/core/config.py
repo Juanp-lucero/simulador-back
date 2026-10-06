@@ -16,6 +16,10 @@ class Settings:
         self.cors_origins = _read_origins(
             getenv("CORS_ORIGINS", "http://localhost:4200")
         )
+        self.database_url = getenv(
+            "DATABASE_URL",
+            "postgresql+psycopg://aeromind:change-me@localhost:5432/aeromind",
+        )
 
 
 settings = Settings()
