@@ -14,3 +14,5 @@ alembic upgrade head
 ```
 
 La migración `0001_create_users` crea la tabla de usuarios requerida por autenticación. Se verificó el upgrade y downgrade de esa migración en SQLite temporal; no se verificó una conexión a un servidor PostgreSQL real en este entorno.
+
+`0002_aircraft_routes` agrega aeronaves, rutas y waypoints con claves foráneas, índices de propietario y restricciones de unicidad/rango. Al eliminar una aeronave, PostgreSQL desasigna sus rutas mediante `ON DELETE SET NULL`; los waypoints se eliminan con su ruta.

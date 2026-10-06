@@ -9,8 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
+from app.routers.aircraft import router as aircraft_router
 from app.routers.auth import router as auth_router
 from app.routers.health import router as health_router
+from app.routers.routes import router as routes_router
 
 logger = logging.getLogger(__name__)
 
@@ -61,3 +63,5 @@ async def handle_unexpected_error(
 
 app.include_router(health_router)
 app.include_router(auth_router)
+app.include_router(aircraft_router)
+app.include_router(routes_router)
