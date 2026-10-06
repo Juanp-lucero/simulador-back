@@ -4,4 +4,4 @@ from sqlalchemy.orm import DeclarativeBase
 
 
 class Base(DeclarativeBase):
-    """Base class inherited by database models added in later phases."""
+    """Base class inherited by database models."""

@@ -20,6 +20,11 @@ class Settings:
             "DATABASE_URL",
             "postgresql+psycopg://aeromind:change-me@localhost:5432/aeromind",
         )
+        self.secret_key = getenv("SECRET_KEY", "")
+        self.algorithm = getenv("ALGORITHM", "HS256")
+        self.access_token_expire_minutes = int(
+            getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
+        )
 
 
 settings = Settings()

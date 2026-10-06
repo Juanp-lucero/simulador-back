@@ -41,8 +41,8 @@ def test_alembic_can_load_migration_directory() -> None:
     scripts = ScriptDirectory.from_config(config)
 
     assert scripts.dir.endswith("/alembic")
-    assert scripts.get_heads() == []
+    assert scripts.get_heads() == ["0001_create_users"]
 
 
-def test_declarative_base_is_available_for_models() -> None:
-    assert Base.metadata.tables == {}
+def test_declarative_base_includes_user_model() -> None:
+    assert "users" in Base.metadata.tables

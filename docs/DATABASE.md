@@ -4,7 +4,7 @@ La aplicación obtiene la conexión desde `DATABASE_URL`. La plantilla `.env.exa
 
 ## Migraciones
 
-Alembic está configurado en `alembic.ini` y usa `Base.metadata` como metadatos de los modelos. Cuando se agreguen entidades, importa sus módulos en el entorno de Alembic antes de generar una revisión para que el autogenerador las detecte.
+Alembic está configurado en `alembic.ini` y usa `Base.metadata` como metadatos de los modelos. El entorno importa el paquete `app.models`; importa allí cualquier módulo de modelo nuevo antes de generar una revisión para que el autogenerador lo detecte.
 
 Desde la raíz del backend:
 
@@ -13,4 +13,4 @@ alembic revision --autogenerate -m "describir el cambio"
 alembic upgrade head
 ```
 
-Todavía no se crea una migración inicial porque esta fase no define modelos de dominio. No se verificó una conexión a un servidor PostgreSQL real en el entorno de desarrollo de esta etapa.
+La migración `0001_create_users` crea la tabla de usuarios requerida por autenticación. Se verificó el upgrade y downgrade de esa migración en SQLite temporal; no se verificó una conexión a un servidor PostgreSQL real en este entorno.
