@@ -5,7 +5,7 @@ Ground speed is constant per leg; altitude is interpolated linearly.
 """
 
 from dataclasses import dataclass
-from math import asin, atan2, cos, degrees, hypot, isfinite, pi, radians, sin, sqrt
+from math import asin, atan2, cos, degrees, isfinite, pi, radians, sin, sqrt
 from collections.abc import Sequence
 
 EARTH_RADIUS_M = 6_371_008.8
