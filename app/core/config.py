@@ -1,4 +1,4 @@
-﻿"""Environment-backed settings for the AeroMind API."""
+"""Environment-backed settings for the AeroMind API."""
 
 import os
 from pathlib import Path
@@ -47,6 +47,10 @@ class Settings:
         self.access_token_expire_minutes = int(
             os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
         )
+        self.groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
+        self.groq_model = os.getenv(
+            "GROQ_MODEL", "llama-3.3-70b-versatile"
+        ).strip()
 
 
 settings = Settings()
