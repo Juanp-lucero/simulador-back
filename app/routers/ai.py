@@ -11,13 +11,15 @@ from app.schemas.ai import (
     SimulationExplanationRequest,
     SimulationExplanationResponse,
 )
+from app.schemas.simulation import SimulationPreviewRequest
 from app.services.ai import (
     GroqNotConfiguredError,
     GroqServiceError,
     explain_simulation,
 )
+from app.services.aircraft import AircraftNotFoundError
+from app.services.routes import RouteNotFoundError
 from app.services.simulation import preview_simulation
-from app.schemas.simulation import SimulationPreviewRequest
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -55,29 +57,12 @@ def explain_preview(
             owner_id=current_user.id,
             payload=preview_payload,
         )
+    except RouteNotFoundError:
+        raise HTTPException(status_code=404, detail="Route not found") from None
+    except AircraftNotFoundError:
+        raise HTTPException(status_code=404, detail="Aircraft not found") from None
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
-    except Exception:
-        # Do not disclose database or implementation details to API callers.
-        raise HTTPException(
-            status_code=404,
-            detail="Route, aircraft or simulation resource not found",
-        ) from None
-
-    # The client may request an explanation of the preview but cannot replace
-    # the backend-calculated positions, timing, or aircraft state.
-    if payload.simulation_result:
-        client_state_ids = {
-            str(item.get("aircraft_id"))
-            for item in payload.simulation_result.get("states", [])
-            if isinstance(item, dict)
-        }
-        server_state_ids = {str(item.aircraft_id) for item in deterministic_result.states}
-        if client_state_ids and client_state_ids != server_state_ids:
-            raise HTTPException(
-                status_code=422,
-                detail="Simulation result does not match the selected routes",
-            )
 
     result_data = deterministic_result.model_dump()
     request_data = {
