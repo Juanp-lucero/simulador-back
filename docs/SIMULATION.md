@@ -25,3 +25,9 @@ El motor puro está en `app/simulation/engine.py`. `sample_path` depende solo de
 Devuelve los estados de las rutas propias seleccionadas. Se permiten hasta 25 rutas y 86400 segundos por solicitud. Todas deben tener aeronave asignada; una aeronave no puede ocupar dos rutas simultáneas en el mismo escenario. La altitud del plan no debe exceder el límite almacenado de la aeronave.
 
 Este endpoint es **stateless**: permite buscar un instante o repetir una evaluación con el mismo resultado. Todavía no mantiene sesiones compartidas, no persiste posiciones y no ejecuta un bucle autónomo.
+
+## Uso de asistencia IA
+
+AeroMind puede solicitar a Groq una explicación textual del resultado calculado por el motor. Esta capacidad es complementaria: no interviene en interpolación de coordenadas, cálculo de distancia, rumbo, velocidad, duración ni progreso. El endpoint de IA vuelve a ejecutar el preview en el servidor con las rutas propiedad del usuario autenticado.
+
+La explicación debe leerse como apoyo educativo. El modelo matemático es una aproximación geométrica sobre una Tierra esférica, con velocidad constante por tramo e interpolación lineal de altitud. No modela dinámica de vuelo, viento, consumo, meteorología, restricciones de espacio aéreo, NOTAM, procedimientos, separación ATC ni condiciones reales. No se debe utilizar para planificación ni ejecución de vuelos.
