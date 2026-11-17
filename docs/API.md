@@ -34,3 +34,32 @@ Cada waypoint contiene `latitude_deg`, `longitude_deg`, `altitude_m` y `speed_mp
 ## Simulación
 
 `POST /simulation/preview` evalúa rutas propias en un tiempo simulado. Recibe `route_ids` y `elapsed_s`; devuelve posiciones, rumbo, velocidad, progreso y duración. Requiere aeronaves asignadas y no permite la misma aeronave en dos rutas del escenario. Los supuestos y límites están en [SIMULATION.md](SIMULATION.md).
+
+## Asistencia IA con Groq
+
+Los endpoints de IA requieren autenticación Bearer JWT y no sustituyen los cálculos del motor geométrico.
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/ai/status` | Devuelve proveedor, modelo y si existe configuración de Groq. No expone la clave. |
+| `POST` | `/ai/simulation/explain` | Ejecuta el preview de rutas del usuario y solicita a Groq una explicación del resultado. |
+
+Ejemplo de cuerpo para `POST /ai/simulation/explain`:
+
+```json
+{
+  "route_ids": [1],
+  "elapsed_s": 120,
+  "simulation_result": {}
+}
+```
+
+El resultado enviado por el cliente no reemplaza los valores calculados por el servidor. Las posiciones y duraciones se vuelven a calcular a partir de las rutas propias y se entregan al proveedor solo para redactar una explicación. La respuesta incluye un aviso de alcance académico.
+
+Respuestas de error:
+
+- `401`: falta un token válido.
+- `404`: ruta o aeronave no encontrada para el usuario.
+- `422`: entrada inválida.
+- `503`: `GROQ_API_KEY` no configurada.
+- `502`: error al comunicarse con Groq.
