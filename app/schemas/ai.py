@@ -1,6 +1,6 @@
 """Request and response schemas for AI-assisted simulation explanations."""
 
-from typing import Any
+from typing import Any, Annotated
 
 from pydantic import BaseModel, Field
 
@@ -8,9 +8,9 @@ from pydantic import BaseModel, Field
 class SimulationExplanationRequest(BaseModel):
     """Simulation data that the assistant can explain."""
 
-    route_ids: list[int] = Field(min_length=1, max_length=25)
+    route_ids: list[Annotated[int, Field(ge=1)]] = Field(min_length=1, max_length=25)
     elapsed_s: float = Field(ge=0, le=86400)
-    simulation_result: dict[str, Any]
+    simulation_result: dict[str, Any] = Field(default_factory=dict)
 
 
 class SimulationExplanationResponse(BaseModel):
