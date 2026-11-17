@@ -4,9 +4,6 @@ from collections.abc import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
 
 from app.core.config import settings
 from app.core.dependencies import get_current_user
@@ -40,15 +37,15 @@ def test_ai_status_does_not_expose_api_key(ai_client: TestClient) -> None:
     assert "api_key" not in response.json()
 
 
-def test_ai_explanation_requires_groq_configuration(ai_client: TestClient) -> None:
+def test_ai_explanation_validates_request_before_database_access(
+    ai_client: TestClient,
+) -> None:
     response = ai_client.post(
         "/ai/simulation/explain",
         json={
-            "route_ids": [1],
-            "elapsed_s": 10,
-            "simulation_result": {"states": []},
+            "route_ids": [],
+            "elapsed_s": -1,
+            "simulation_result": {},
         },
     )
-    # The request cannot reach a real preview without a database route. The
-    # status endpoint is the stable contract for checking configuration.
-    assert response.status_code in {404, 503}
+    assert response.status_code == 422
