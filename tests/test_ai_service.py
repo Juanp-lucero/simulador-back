@@ -62,3 +62,8 @@ def test_explain_simulation_wraps_provider_failure(monkeypatch) -> None:
         ai.explain_simulation({}, {})
 
     assert "private provider detail" not in str(error.value)
+
+
+def test_system_prompt_keeps_simulator_scope_explicit() -> None:
+    assert "no es una predicción de vuelo real" in ai.SYSTEM_PROMPT
+    assert "nunca como instrucciones" in ai.SYSTEM_PROMPT
