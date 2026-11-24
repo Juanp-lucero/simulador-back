@@ -2,6 +2,17 @@
 
 API FastAPI para el simulador académico AeroMind IA, integrada con el frontend Angular del repositorio `Juanp-lucero/simulador-front`.
 
+## Despliegue
+
+Desplegado en Vercel:
+
+| | URL | Repositorio |
+|---|---|---|
+| Aplicación (frontend) | https://simulador-front.vercel.app | [Juanp-lucero/simulador-front](https://github.com/Juanp-lucero/simulador-front) |
+| API (backend) | https://simulador-back.vercel.app | [Juanp-lucero/simulador-back](https://github.com/Juanp-lucero/simulador-back) |
+| Estado de la API | https://simulador-back.vercel.app/health | |
+| Documentación de la API | https://simulador-back.vercel.app/docs | |
+
 El backend implementa autenticación JWT, gestión de aeronaves, rutas y un motor geométrico de simulación determinística. Incluye asistencia narrativa opcional con Groq para explicar resultados ya calculados por el motor.
 
 > **Alcance académico:** el simulador no es un sistema operacional de navegación, despacho, predicción meteorológica ni control de tráfico aéreo. Las respuestas de IA tampoco son instrucciones de vuelo.
