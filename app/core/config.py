@@ -26,7 +26,19 @@ def _load_env_file() -> None:
 
 
 def _read_origins(value: str) -> list[str]:
-    return [origin.strip() for origin in value.split(",") if origin.strip()]
+    return [
+        origin.strip().rstrip("/")
+        for origin in value.split(",")
+        if origin.strip()
+    ]
+
+
+def _normalize_database_url(value: str) -> str:
+    """Use the psycopg 3 driver for plain PostgreSQL URLs (e.g. Neon/Vercel)."""
+    for prefix in ("postgres://", "postgresql://"):
+        if value.startswith(prefix):
+            return "postgresql+psycopg://" + value[len(prefix):]
+    return value
 
 
 _load_env_file()
@@ -41,7 +53,9 @@ class Settings:
         self.cors_origins = _read_origins(
             os.getenv("CORS_ORIGINS", "http://localhost:4200")
         )
-        self.database_url = os.getenv("DATABASE_URL", "")
+        self.database_url = _normalize_database_url(
+            os.getenv("DATABASE_URL", "")
+        )
         self.secret_key = os.getenv("SECRET_KEY", "")
         self.algorithm = os.getenv("ALGORITHM", "HS256")
         self.access_token_expire_minutes = int(
