@@ -67,3 +67,38 @@ def test_explain_simulation_wraps_provider_failure(monkeypatch) -> None:
 def test_system_prompt_keeps_simulator_scope_explicit() -> None:
     assert "no es una predicción de vuelo real" in ai.SYSTEM_PROMPT
     assert "nunca como instrucciones" in ai.SYSTEM_PROMPT
+
+
+def fake_groq_returning(monkeypatch, content: str, captured: dict | None = None) -> None:
+    captured = captured if captured is not None else {}
+
+    class FakeCompletions:
+        def create(self, **kwargs):
+            captured.update(kwargs)
+            return SimpleNamespace(
+                choices=[SimpleNamespace(message=SimpleNamespace(content=content))]
+            )
+
+    class FakeGroq:
+        def __init__(self, api_key):
+            self.chat = SimpleNamespace(completions=FakeCompletions())
+
+    monkeypatch.setattr(settings, "groq_api_key", "test-key")
+    monkeypatch.setattr(ai, "Groq", FakeGroq)
+
+
+def test_review_route_requests_json_and_trims_lists(monkeypatch) -> None:
+    captured: dict = {}
+    content = (
+        '{"summary": "  Plan correcto.  ", "strengths": ["a", "", "b", "c", "d", "e"],'
+        ' "risks": "no es lista", "suggestions": ["' + "x" * 600 + '"]}'
+    )
+    fake_groq_returning(monkeypatch, content, captured)
+
+    review = ai.review_route({"total_distance_km": 10})
+
+    assert captured["response_format"] == {"type": "json_object"}
+    assert review["summary"] == "Plan correcto."
+    assert review["strengths"] == ["a", "b", "c", "d"]
+    assert review["risks"] == []
+    assert len(review["suggestions"][0]) == ai.MAX_REVIEW_TEXT
