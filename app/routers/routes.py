@@ -6,7 +6,10 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_user
 from app.database.database import get_db
 from app.models import User
+from app.schemas.insights import RouteInsightsResponse
 from app.schemas.operations import RouteResponse, RouteWrite
+from app.services.aircraft import AircraftNotFoundError
+from app.services.route_insights import compute_route_insights
 from app.services.routes import (
     RouteAircraftNotFoundError,
     RouteAlreadyExistsError,
@@ -87,3 +90,19 @@ def delete(
     except RouteNotFoundError:
         raise HTTPException(status_code=404, detail="Route not found") from None
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/{route_id}/insights", response_model=RouteInsightsResponse)
+def read_route_insights(
+    route_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> RouteInsightsResponse:
+    """Distance, duration, altitude margin and checks of a route plan."""
+    try:
+        insights = compute_route_insights(db, owner_id=current_user.id, route_id=route_id)
+    except (RouteNotFoundError, AircraftNotFoundError):
+        raise HTTPException(status_code=404, detail="Route not found") from None
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+    return RouteInsightsResponse(**insights.as_dict())
