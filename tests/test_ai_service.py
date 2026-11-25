@@ -102,3 +102,16 @@ def test_review_route_requests_json_and_trims_lists(monkeypatch) -> None:
     assert review["strengths"] == ["a", "b", "c", "d"]
     assert review["risks"] == []
     assert len(review["suggestions"][0]) == ai.MAX_REVIEW_TEXT
+
+
+@pytest.mark.parametrize("content", ["no es json", '{"summary": "   "}', "[1, 2]"])
+def test_review_route_rejects_invalid_answers(monkeypatch, content) -> None:
+    fake_groq_returning(monkeypatch, content)
+    with pytest.raises(ai.GroqServiceError):
+        ai.review_route({"total_distance_km": 10})
+
+
+def test_review_route_requires_api_key(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "groq_api_key", "")
+    with pytest.raises(ai.GroqNotConfiguredError):
+        ai.review_route({})
