@@ -1,8 +1,9 @@
-"""Stateless simulation preview contracts."""
+"""Simulation preview and saved run contracts."""
 
+from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class SimulationPreviewRequest(BaseModel):
@@ -36,3 +37,33 @@ class AircraftStateResponse(BaseModel):
 class SimulationPreviewResponse(BaseModel):
     elapsed_s: float
     states: list[AircraftStateResponse]
+
+
+class SimulationRunCreate(SimulationPreviewRequest):
+    """Save a simulation scenario together with its deterministic result."""
+
+    name: str = Field(min_length=1, max_length=100)
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        cleaned = " ".join(value.split())
+        if not cleaned:
+            raise ValueError("Name cannot be blank")
+        return cleaned
+
+
+class SimulationRunSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    route_ids: list[int]
+    elapsed_s: float
+    has_explanation: bool = False
+    created_at: datetime
+
+
+class SimulationRunResponse(SimulationRunSummary):
+    result: SimulationPreviewResponse
+    explanation: str | None = None
