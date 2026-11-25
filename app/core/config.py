@@ -63,7 +63,7 @@ class Settings:
         )
         self.groq_api_key = os.getenv("GROQ_API_KEY", "").strip()
         self.groq_model = os.getenv(
-            "GROQ_MODEL", "llama-3.3-70b-versatile"
+            "GROQ_MODEL", "openai/gpt-oss-120b"
         ).strip()
 
 

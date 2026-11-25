@@ -43,7 +43,7 @@ Variables principales:
 - `SECRET_KEY`: clave aleatoria de firma JWT de al menos 32 bytes.
 - `CORS_ORIGINS`: orígenes permitidos separados por coma.
 - `GROQ_API_KEY`: clave privada de Groq. Déjala vacía para deshabilitar la asistencia IA.
-- `GROQ_MODEL`: modelo de Groq; por defecto `llama-3.3-70b-versatile`.
+- `GROQ_MODEL`: modelo de Groq; por defecto `openai/gpt-oss-120b`.
 
 Obtén tu clave en https://console.groq.com/keys. Nunca subas el archivo `.env` ni compartas la clave.
 
