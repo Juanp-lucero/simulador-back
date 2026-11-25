@@ -115,3 +115,26 @@ def test_review_route_requires_api_key(monkeypatch) -> None:
     monkeypatch.setattr(settings, "groq_api_key", "")
     with pytest.raises(ai.GroqNotConfiguredError):
         ai.review_route({})
+
+
+def test_rule_review_lists_warnings_as_risks() -> None:
+    review = ai.review_route_with_rules(
+        {
+            "total_distance_km": 120.5,
+            "leg_count": 2,
+            "estimated_duration_min": 30,
+            "aircraft_registration": "HK-123",
+            "ceiling_margin_m": 50,
+            "warnings": ["Margen bajo el techo menor a 150 m."],
+        }
+    )
+    assert "120.5 km" in review["summary"]
+    assert review["risks"] == ["Margen bajo el techo menor a 150 m."]
+    assert review["strengths"] == []
+
+
+def test_rule_review_handles_missing_fields_and_aircraft() -> None:
+    review = ai.review_route_with_rules({})
+    assert review["summary"].startswith("Ruta de 0 km")
+    assert review["risks"] == []
+    assert any("aeronave" in item for item in review["suggestions"])
