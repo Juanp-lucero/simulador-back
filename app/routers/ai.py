@@ -16,9 +16,13 @@ from app.services.ai import (
     GroqNotConfiguredError,
     GroqServiceError,
     explain_simulation,
+    review_route,
+    review_route_with_rules,
 )
 from app.services.aircraft import AircraftNotFoundError
 from app.services.routes import RouteNotFoundError
+from app.services.route_insights import compute_route_insights
+from app.schemas.insights import RouteInsightsResponse, RouteReviewResponse
 from app.services.simulation import preview_simulation
 from app.services import simulation_runs
 from app.services.simulation_runs import SimulationRunNotFoundError
@@ -118,4 +122,34 @@ def explain_saved_run(
     return SimulationExplanationResponse(
         model=settings.groq_model,
         explanation=explanation,
+    )
+
+
+@router.post("/routes/{route_id}/review", response_model=RouteReviewResponse)
+def review_route_plan(
+    route_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> RouteReviewResponse:
+    """Review a route plan with AI, falling back to the automatic checks."""
+    try:
+        insights = compute_route_insights(db, owner_id=current_user.id, route_id=route_id)
+    except (RouteNotFoundError, AircraftNotFoundError):
+        raise HTTPException(status_code=404, detail="Route not found") from None
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+
+    data = insights.as_dict()
+    try:
+        review = review_route(data)
+        source, model = "ai", settings.groq_model
+    except (GroqNotConfiguredError, GroqServiceError):
+        review = review_route_with_rules(data)
+        source, model = "rules", None
+
+    return RouteReviewResponse(
+        source=source,
+        model=model,
+        insights=RouteInsightsResponse(**data),
+        **review,
     )
