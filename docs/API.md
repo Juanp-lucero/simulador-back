@@ -35,6 +35,24 @@ Cada waypoint contiene `latitude_deg`, `longitude_deg`, `altitude_m` y `speed_mp
 
 `POST /simulation/preview` evalúa rutas propias en un tiempo simulado. Recibe `route_ids` y `elapsed_s`; devuelve posiciones, rumbo, velocidad, progreso y duración. Requiere aeronaves asignadas y no permite la misma aeronave en dos rutas del escenario. Los supuestos y límites están en [SIMULATION.md](SIMULATION.md).
 
+### Historial de simulaciones
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `POST` | `/simulation/runs` | Calcula el preview y guarda `name`, `route_ids`, `elapsed_s` y el resultado. |
+| `GET` | `/simulation/runs?offset=0&limit=20` | Lista las simulaciones propias, más recientes primero. Cada elemento indica `has_explanation`. |
+| `GET` | `/simulation/runs/{id}` | Devuelve el resultado guardado y la explicación IA, si existe. |
+| `PATCH` | `/simulation/runs/{id}` | Renombra la simulación (`{"name": "..."}`). |
+| `DELETE` | `/simulation/runs/{id}` | Elimina la simulación y su explicación. |
+
+Las simulaciones de otro usuario responden `404`.
+
+## Métricas de rutas y dashboard
+
+- `GET /routes/{id}/insights`: distancia total, tramos, duración estimada, rango de altitudes y velocidades, techo de la aeronave, margen bajo el techo, tasa vertical máxima y `warnings` (sin aeronave, techo superado o con margen menor a 150 m, velocidad mayor a 1,2 veces la de crucero, tasa vertical mayor a 10 m/s).
+- `GET /stats`: conteo de aeronaves, rutas, waypoints y simulaciones guardadas, y distancia total planificada.
+- `GET /health/details` (público): `{"status", "database", "ai_configured"}`.
+
 ## Asistencia IA con Groq
 
 Los endpoints de IA requieren autenticación Bearer JWT y no sustituyen los cálculos del motor geométrico.
@@ -43,6 +61,8 @@ Los endpoints de IA requieren autenticación Bearer JWT y no sustituyen los cál
 |---|---|---|
 | `GET` | `/ai/status` | Devuelve proveedor, modelo y si existe configuración de Groq. No expone la clave. |
 | `POST` | `/ai/simulation/explain` | Ejecuta el preview de rutas del usuario y solicita a Groq una explicación del resultado. |
+| `POST` | `/ai/simulation/runs/{id}/explain` | Explica una simulación guardada y almacena la explicación. |
+| `POST` | `/ai/routes/{id}/review` | Devuelve `{source, summary, strengths, risks, suggestions, insights}`. Con Groq, `source` es `"ai"`; sin clave o si el proveedor falla, `"rules"`. Nunca responde `502`/`503`. |
 
 Ejemplo de cuerpo para `POST /ai/simulation/explain`:
 
