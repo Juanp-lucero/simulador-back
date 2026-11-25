@@ -137,22 +137,24 @@ def review_route(insights: dict) -> dict:
 
 def review_route_with_rules(insights: dict) -> dict:
     """Review built only from the deterministic checks (no AI)."""
-    warnings = list(insights.get("warnings") or [])
+    warnings = [str(item) for item in insights.get("warnings") or []]
     strengths = []
     if not warnings:
         strengths.append("El plan no presenta alertas en los chequeos automáticos.")
-    if insights.get("ceiling_margin_m") is not None and insights["ceiling_margin_m"] >= 150:
-        strengths.append(
-            f"Mantiene {insights['ceiling_margin_m']:.0f} m de margen bajo el techo de la aeronave."
-        )
+    margin = insights.get("ceiling_margin_m")
+    if margin is not None and margin >= 150:
+        strengths.append(f"Mantiene {margin:.0f} m de margen bajo el techo de la aeronave.")
+    suggestions = []
+    if not insights.get("aircraft_registration"):
+        suggestions.append("Asigna una aeronave para validar techo y velocidad de crucero.")
+    suggestions.append("Activa la asistencia IA para obtener una revisión detallada del plan.")
     return {
         "summary": (
-            f"Ruta de {insights['total_distance_km']} km en {insights['leg_count']} tramos, "
-            f"con una duración estimada de {insights['estimated_duration_min']} minutos."
+            f"Ruta de {insights.get('total_distance_km', 0)} km en "
+            f"{insights.get('leg_count', 0)} tramos, con una duración estimada de "
+            f"{insights.get('estimated_duration_min', 0)} minutos."
         ),
         "strengths": strengths,
         "risks": warnings,
-        "suggestions": [
-            "Activa la asistencia IA para obtener una revisión detallada del plan."
-        ],
+        "suggestions": suggestions[:MAX_REVIEW_ITEMS],
     }
