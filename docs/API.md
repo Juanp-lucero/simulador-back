@@ -50,7 +50,7 @@ Las simulaciones de otro usuario responden `404`.
 ## Métricas de rutas y dashboard
 
 - `GET /routes/{id}/insights`: distancia total, tramos, duración estimada, rango de altitudes y velocidades, techo de la aeronave, margen bajo el techo, tasa vertical máxima y `warnings` (sin aeronave, techo superado o con margen menor a 150 m, velocidad mayor a 1,2 veces la de crucero, tasa vertical mayor a 10 m/s).
-- `GET /stats`: conteo de aeronaves, rutas, waypoints y simulaciones guardadas, y distancia total planificada.
+- `GET /stats`: `aircraft_count`, `route_count`, `routes_without_aircraft`, `simulation_run_count`, `explained_run_count` y `planned_distance_km`.
 - `GET /health/details` (público): `{"status", "database", "ai_configured"}`.
 
 ## Asistencia IA con Groq
