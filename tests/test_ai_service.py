@@ -138,3 +138,40 @@ def test_rule_review_handles_missing_fields_and_aircraft() -> None:
     assert review["summary"].startswith("Ruta de 0 km")
     assert review["risks"] == []
     assert any("aeronave" in item for item in review["suggestions"])
+
+
+def test_retired_model_falls_back_to_gpt_oss(monkeypatch) -> None:
+    import httpx
+    from groq import NotFoundError
+
+    calls: list = []
+    monkeypatch.setattr(ai, "_working_model", None)
+    monkeypatch.setattr(settings, "groq_api_key", "test-key")
+    monkeypatch.setattr(settings, "groq_model", "llama-3.3-70b-versatile")
+
+    class FakeCompletions:
+        def create(self, **kwargs):
+            calls.append(kwargs)
+            if kwargs["model"] == "llama-3.3-70b-versatile":
+                request = httpx.Request("POST", "https://api.groq.com")
+                raise NotFoundError(
+                    "model_not_found",
+                    response=httpx.Response(404, request=request),
+                    body=None,
+                )
+            return SimpleNamespace(
+                choices=[SimpleNamespace(message=SimpleNamespace(content="Informe"))]
+            )
+
+    class FakeGroq:
+        def __init__(self, api_key):
+            self.chat = SimpleNamespace(completions=FakeCompletions())
+
+    monkeypatch.setattr(ai, "Groq", FakeGroq)
+
+    assert ai.explain_simulation({"route_ids": [1]}, {"states": []}) == "Informe"
+    assert [call["model"] for call in calls] == [
+        "llama-3.3-70b-versatile",
+        "openai/gpt-oss-120b",
+    ]
+    assert calls[1]["extra_body"] == {"reasoning_effort": "low"}
