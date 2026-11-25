@@ -85,7 +85,21 @@ La IA está separada del motor matemático. El backend calcula el preview con `p
 |---|---|---|
 | `GET` | `/ai/status` | Indica si Groq está configurado, sin exponer secretos. |
 | `POST` | `/ai/simulation/explain` | Calcula el preview y devuelve una explicación contextualizada de Groq. |
+| `POST` | `/ai/simulation/runs/{id}/explain` | Explica una simulación guardada y guarda el texto en el historial. |
+| `POST` | `/ai/routes/{id}/review` | Revisa un plan de ruta. Usa Groq si está configurado y, si no, una revisión por reglas (`source: "rules"`). |
 
 El endpoint de explicación requiere JWT y rutas pertenecientes al usuario autenticado. La respuesta generada no cambia coordenadas, altitudes, velocidades, duración ni progreso. La falta de API key devuelve `503`; un fallo del proveedor devuelve `502`. El preview determinístico existente sigue funcionando sin Groq.
 
-El sistema no persiste prompts ni respuestas de IA. Evita incluir información sensible en los datos enviados al proveedor externo.
+El sistema no guarda prompts. Solo las explicaciones pedidas sobre una simulación guardada se almacenan junto a esa simulación, y se borran con ella. Evita incluir información sensible en los datos enviados al proveedor externo.
+
+### Historial, métricas y estado
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET`, `POST` | `/simulation/runs` | Lista (más recientes primero, con `offset` y `limit`) o guarda una simulación. |
+| `GET`, `PATCH`, `DELETE` | `/simulation/runs/{id}` | Lee, renombra o elimina una simulación guardada. |
+| `GET` | `/routes/{id}/insights` | Distancia, duración, altitudes, velocidades, margen bajo el techo y alertas de un plan. |
+| `GET` | `/stats` | Totales del usuario para el dashboard. |
+| `GET` | `/health/details` | Estado de la base de datos y de la configuración de IA, sin exponer secretos. |
+
+Todas las rutas, salvo `/health/details`, requieren JWT y solo devuelven datos del usuario autenticado.
