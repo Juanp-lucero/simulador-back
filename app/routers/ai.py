@@ -15,6 +15,7 @@ from app.schemas.simulation import SimulationPreviewRequest
 from app.services.ai import (
     GroqNotConfiguredError,
     GroqServiceError,
+    active_model,
     explain_simulation,
     review_route,
     review_route_with_rules,
@@ -38,7 +39,7 @@ def ai_status(
     return {
         "provider": "groq",
         "configured": bool(settings.groq_api_key),
-        "model": settings.groq_model,
+        "model": active_model(),
     }
 
 
@@ -84,7 +85,7 @@ def explain_preview(
         raise HTTPException(status_code=502, detail=str(exc)) from None
 
     return SimulationExplanationResponse(
-        model=settings.groq_model,
+        model=active_model(),
         explanation=explanation,
     )
 
@@ -120,7 +121,7 @@ def explain_saved_run(
         db, owner_id=current_user.id, run_id=run.id, explanation=explanation
     )
     return SimulationExplanationResponse(
-        model=settings.groq_model,
+        model=active_model(),
         explanation=explanation,
     )
 
@@ -142,7 +143,7 @@ def review_route_plan(
     data = insights.as_dict()
     try:
         review = review_route(data)
-        source, model = "ai", settings.groq_model
+        source, model = "ai", active_model()
     except (GroqNotConfiguredError, GroqServiceError):
         review = review_route_with_rules(data)
         source, model = "rules", None

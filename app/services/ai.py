@@ -54,6 +54,11 @@ def candidate_models() -> list[str]:
     return list(dict.fromkeys(model for model in ordered if model))
 
 
+def active_model() -> str:
+    """Model that answered last, or the configured one before any call."""
+    return _working_model or settings.groq_model
+
+
 def _complete(system: str, user: str, *, max_tokens: int, json_mode: bool = False) -> str:
     """Run one chat completion against Groq and return the raw text.
 
