@@ -4,7 +4,7 @@ import json
 
 import logging
 
-from groq import Groq
+from groq import Groq, NotFoundError
 
 from app.core.config import settings
 
@@ -40,23 +40,53 @@ def _require_api_key() -> str:
     return settings.groq_api_key
 
 
+# Models tried, in order, when the configured one is retired or unavailable.
+FALLBACK_MODELS = ("openai/gpt-oss-120b", "openai/gpt-oss-20b")
+# Reasoning models spend part of the token budget thinking before answering.
+REASONING_TOKEN_ALLOWANCE = 1024
+
+_working_model: str | None = None
+
+
+def candidate_models() -> list[str]:
+    """Configured model first, then the fallbacks, without duplicates."""
+    ordered = [_working_model, settings.groq_model, *FALLBACK_MODELS]
+    return list(dict.fromkeys(model for model in ordered if model))
+
+
 def _complete(system: str, user: str, *, max_tokens: int, json_mode: bool = False) -> str:
-    """Run one chat completion against Groq and return the raw text."""
+    """Run one chat completion against Groq and return the raw text.
+
+    Moves to the next model when Groq reports the current one as retired.
+    """
+    global _working_model
     client = Groq(api_key=_require_api_key())
-    options = {
-        "model": settings.groq_model,
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        "temperature": 0.2,
-        "max_tokens": max_tokens,
-        "timeout": 25,
-    }
-    if json_mode:
-        options["response_format"] = {"type": "json_object"}
-    completion = client.chat.completions.create(**options)
-    return completion.choices[0].message.content or ""
+    last_error: Exception | None = None
+    for model in candidate_models():
+        options = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+            "temperature": 0.2,
+            "max_tokens": max_tokens,
+            "timeout": 25,
+        }
+        if json_mode:
+            options["response_format"] = {"type": "json_object"}
+        if model.startswith("openai/gpt-oss"):
+            options["max_tokens"] = max_tokens + REASONING_TOKEN_ALLOWANCE
+            options["extra_body"] = {"reasoning_effort": "low"}
+        try:
+            completion = client.chat.completions.create(**options)
+        except NotFoundError as exc:
+            logger.warning("Groq model %s is not available, trying the next one", model)
+            last_error = exc
+            continue
+        _working_model = model
+        return completion.choices[0].message.content or ""
+    raise GroqServiceError("Ningún modelo de IA está disponible.") from last_error
 
 
 def explain_simulation(payload: dict, result: dict) -> str:
