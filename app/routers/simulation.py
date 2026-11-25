@@ -10,6 +10,7 @@ from app.schemas.simulation import (
     SimulationPreviewRequest,
     SimulationPreviewResponse,
     SimulationRunCreate,
+    SimulationRunRename,
     SimulationRunResponse,
     SimulationRunSummary,
 )
@@ -92,3 +93,19 @@ def delete_run(
         simulation_runs.delete_run(db, owner_id=current_user.id, run_id=run_id)
     except SimulationRunNotFoundError:
         raise HTTPException(status_code=404, detail="Simulation run not found") from None
+
+
+@router.patch("/runs/{run_id}", response_model=SimulationRunResponse)
+def rename_run(
+    run_id: int,
+    payload: SimulationRunRename,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> SimulationRunResponse:
+    try:
+        run = simulation_runs.rename_run(
+            db, owner_id=current_user.id, run_id=run_id, name=payload.name
+        )
+    except SimulationRunNotFoundError:
+        raise HTTPException(status_code=404, detail="Simulation run not found") from None
+    return simulation_runs.to_response(run)
