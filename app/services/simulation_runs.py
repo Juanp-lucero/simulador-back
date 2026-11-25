@@ -65,6 +65,14 @@ def get_run(db: Session, *, owner_id: int, run_id: int) -> SimulationRun:
     return run
 
 
+def rename_run(db: Session, *, owner_id: int, run_id: int, name: str) -> SimulationRun:
+    run = get_run(db, owner_id=owner_id, run_id=run_id)
+    run.name = name
+    db.commit()
+    db.refresh(run)
+    return run
+
+
 def save_explanation(
     db: Session, *, owner_id: int, run_id: int, explanation: str
 ) -> SimulationRun:

@@ -67,3 +67,15 @@ class SimulationRunSummary(BaseModel):
 class SimulationRunResponse(SimulationRunSummary):
     result: SimulationPreviewResponse
     explanation: str | None = None
+
+
+class SimulationRunRename(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        cleaned = " ".join(value.split())
+        if not cleaned:
+            raise ValueError("Name cannot be blank")
+        return cleaned
