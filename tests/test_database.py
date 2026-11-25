@@ -4,6 +4,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from sqlalchemy.engine import make_url
 
+import app.models  # noqa: F401 - registers every table on Base.metadata
 from app.core.config import settings
 from app.database import database
 from app.database.base import Base
@@ -46,3 +47,4 @@ def test_alembic_can_load_migration_directory() -> None:
 
 def test_declarative_base_includes_user_model() -> None:
     assert "users" in Base.metadata.tables
+    assert "simulation_runs" in Base.metadata.tables
