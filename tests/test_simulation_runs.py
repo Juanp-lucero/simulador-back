@@ -101,3 +101,44 @@ def test_invalid_runs_are_rejected(operations_context) -> None:  # noqa: F811
     assert too_long.status_code == 422
 
     assert client.get("/simulation/runs").status_code == 401
+
+
+def test_run_can_be_renamed_only_by_its_owner(operations_context) -> None:  # noqa: F811
+    client, session_factory = operations_context
+    _, owner = create_actor(session_factory, "pilot@example.com")
+    _, other = create_actor(session_factory, "other@example.com")
+    route_id = create_route(client, owner)
+    run = client.post(
+        "/simulation/runs",
+        headers=owner,
+        json={"name": "Inicial", "route_ids": [route_id], "elapsed_s": 0},
+    ).json()
+
+    renamed = client.patch(
+        f"/simulation/runs/{run['id']}", headers=owner, json={"name": "  Final  "}
+    )
+    assert renamed.status_code == 200
+    assert renamed.json()["name"] == "Final"
+    assert client.patch(
+        f"/simulation/runs/{run['id']}", headers=other, json={"name": "Robado"}
+    ).status_code == 404
+
+
+def test_runs_are_listed_newest_first_with_pagination(operations_context) -> None:  # noqa: F811
+    client, session_factory = operations_context
+    _, headers = create_actor(session_factory, "pilot@example.com")
+    route_id = create_route(client, headers)
+    ids = [
+        client.post(
+            "/simulation/runs",
+            headers=headers,
+            json={"name": f"Run {index}", "route_ids": [route_id], "elapsed_s": index},
+        ).json()["id"]
+        for index in range(3)
+    ]
+
+    listed = client.get("/simulation/runs", headers=headers).json()
+    assert [item["id"] for item in listed] == list(reversed(ids))
+
+    page = client.get("/simulation/runs?offset=1&limit=1", headers=headers).json()
+    assert [item["id"] for item in page] == [ids[1]]
