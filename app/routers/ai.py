@@ -20,6 +20,8 @@ from app.services.ai import (
 from app.services.aircraft import AircraftNotFoundError
 from app.services.routes import RouteNotFoundError
 from app.services.simulation import preview_simulation
+from app.services import simulation_runs
+from app.services.simulation_runs import SimulationRunNotFoundError
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -77,6 +79,42 @@ def explain_preview(
     except GroqServiceError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from None
 
+    return SimulationExplanationResponse(
+        model=settings.groq_model,
+        explanation=explanation,
+    )
+
+
+@router.post(
+    "/simulation/runs/{run_id}/explain",
+    response_model=SimulationExplanationResponse,
+)
+def explain_saved_run(
+    run_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> SimulationExplanationResponse:
+    """Explain a saved run with AI and store the explanation with it."""
+    try:
+        run = simulation_runs.get_run(db, owner_id=current_user.id, run_id=run_id)
+    except SimulationRunNotFoundError:
+        raise HTTPException(status_code=404, detail="Simulation run not found") from None
+
+    request_data = {
+        "name": run.name,
+        "route_ids": run.route_ids,
+        "elapsed_s": run.elapsed_s,
+    }
+    try:
+        explanation = explain_simulation(request_data, run.result)
+    except GroqNotConfiguredError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from None
+    except GroqServiceError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from None
+
+    simulation_runs.save_explanation(
+        db, owner_id=current_user.id, run_id=run.id, explanation=explanation
+    )
     return SimulationExplanationResponse(
         model=settings.groq_model,
         explanation=explanation,
