@@ -17,6 +17,44 @@ El backend implementa autenticación JWT, gestión de aeronaves, rutas y un moto
 
 > **Alcance académico:** el simulador no es un sistema operacional de navegación, despacho, predicción meteorológica ni control de tráfico aéreo. Las respuestas de IA tampoco son instrucciones de vuelo.
 
+## Cómo probarlo
+
+1. Entra a https://simulador-front.vercel.app e inicia sesión con la cuenta de prueba (o crea una cuenta en **Crear cuenta**). Abajo a la izquierda debe decir **API conectada** y **Asistencia IA activa (Groq)**.
+2. **Aeronaves → nueva aeronave:** matrícula `HK-5001`, modelo `Cessna 172`, velocidad de crucero `60` m/s, altitud máxima `4200` m.
+3. **Planes de ruta → nuevo plan:** nombre `Bogotá — Medellín`, aeronave `HK-5001` y estos waypoints (los valores grises son solo ejemplos; hay que escribirlos):
+
+   | # | Latitud | Longitud | Altitud (m) | Velocidad (m/s) |
+   |---|---|---|---|---|
+   | 1 | 4.7016 | -74.1469 | 2600 | 60 |
+   | 2 | 5.5 | -74.8 | 4100 | 60 |
+   | 3 | 6.1714 | -75.4231 | 2100 | 55 |
+
+4. En la ruta, pulsa **Métricas**: distancia, duración estimada, altitudes, velocidades y margen bajo el techo. Esta ruta muestra una alerta porque el waypoint 2 pasa a 100 m del techo de la aeronave.
+5. Pulsa **Revisar con IA**: resumen, fortalezas, riesgos y sugerencias. La etiqueta **IA** indica que respondió Groq; **REGLAS** indica que se usó el respaldo automático.
+6. **Simulador:** marca la ruta, **Cargar escenario**, reproduce o mueve la línea de tiempo y pulsa **Explicar con IA**. Escribe un nombre y pulsa **Guardar**.
+7. **Historial:** abre la simulación guardada. Puedes explicarla con IA (la explicación queda guardada), renombrarla, eliminarla o **Abrir en el simulador** en el mismo segundo.
+8. **Resumen:** totales de aeronaves, rutas, simulaciones guardadas, simulaciones explicadas con IA y distancia planificada.
+
+## Cómo funciona
+
+```
+Angular + Leaflet + Chart.js (Vercel) ──REST + JWT──▶ FastAPI (Vercel) ──▶ PostgreSQL (Neon)
+                                                          │
+                                                          └──▶ Groq (IA, opcional)
+```
+
+1. **Motor de simulación (determinístico):** calcula la posición, altitud, velocidad, rumbo y progreso de cada aeronave en un instante, con geometría sobre la esfera terrestre. Es un modelo académico: no incluye viento, aceleración ni separación entre aeronaves.
+2. **Métricas de ruta:** el backend calcula distancia, duración, rangos de altitud y velocidad, margen bajo el techo y tasa vertical. Genera alertas cuando:
+   - la ruta no tiene aeronave;
+   - supera el techo o queda a menos de 150 m de él;
+   - va a más de 1,2 veces la velocidad de crucero;
+   - sube o baja a más de 10 m/s.
+3. **IA (Groq, `openai/gpt-oss-120b`):** solo interpreta. Recibe los números ya calculados y nunca los cambia.
+   - **Explicar:** lectura en lenguaje natural de un instante de la simulación.
+   - **Revisar ruta:** JSON validado con resumen, fortalezas, riesgos y sugerencias. Si la IA falla, responde con una revisión por reglas.
+   - Si el modelo configurado deja de existir, el backend prueba otro automáticamente.
+4. **Historial:** cada simulación guardada conserva sus rutas, el instante, el resultado calculado y, si se pidió, la explicación de la IA.
+
 ## Requisitos
 
 - Python 3.11+
