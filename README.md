@@ -17,6 +17,14 @@ El backend implementa autenticación JWT, gestión de aeronaves, rutas y un moto
 
 > **Alcance académico:** el simulador no es un sistema operacional de navegación, despacho, predicción meteorológica ni control de tráfico aéreo. Las respuestas de IA tampoco son instrucciones de vuelo.
 
+## Cambios recientes
+
+Durante el despliegue en producción se hicieron los siguientes cambios pertinentes, por la vigencia de los servicios externos (APIs) y la configuración del servidor:
+
+- **Despliegue del frontend:** la instalación de dependencias fallaba en Vercel porque al `package-lock.json` le faltaban paquetes. Se regeneró el archivo.
+- **IA y API keys:** Groq retiró el modelo `llama-3.3-70b-versatile` en agosto de 2026 y la explicación de simulaciones dejó de responder. Se cambió a `openai/gpt-oss-120b`, con un modelo de respaldo automático. La llave se configuró como variable de entorno en Vercel y no queda en el código.
+- **Base de datos:** se agregó la migración del historial de simulaciones (`0003_simulation_runs`), que se aplica sola en cada despliegue.
+
 ## Cuenta de prueba
 
 Para revisar AeroMind IA sin registrarse:
